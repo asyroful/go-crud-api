@@ -1,0 +1,80 @@
+basePath: /
+definitions:
+  models.Book:
+    properties:
+      author:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    required:
+    - author
+    - title
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Contoh sederhana CRUD API dengan Go, Gin, dan GORM.
+  title: Go CRUD API
+  version: "1.0"
+paths:
+  /books:
+    get:
+      description: Mengambil daftar semua buku yang tersimpan di database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/models.Book'
+              type: array
+            type: object
+      summary: Ambil semua buku
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      description: Menyimpan data buku baru ke database
+      parameters:
+      - description: Data Buku
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/models.Book'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Book'
+      summary: Tambah buku baru
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      description: Hapus sebuah buku berdasarkan id
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Hapus sebuah buku
+      tags:
+      - books
+swagger: "2.0"
