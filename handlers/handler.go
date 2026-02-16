@@ -112,3 +112,117 @@ func (h *Handler) Login(c *gin.Context) {
 
 	helper.ResponseSuccess(c, loginResponse)
 }
+
+func (h *Handler) CreateCategory(c *gin.Context) {
+	var request models.RequestCreateCategory
+
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	category, err := h.Service.CreateCategory(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, category)
+}
+
+func (h *Handler) GetCategories(c *gin.Context) {
+	var request models.RequestGetCategories
+	request.Name = c.Query("q")
+	request.Limit = c.Query("limit")
+	request.Page = c.Query("page")
+
+	categories, err := h.Service.GetCategories(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, categories)
+}
+
+func (h *Handler) GetCategoryById(c *gin.Context) {
+	var request models.RequestGetCategoryById
+
+	err := c.ShouldBindUri(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	category, err := h.Service.GetCategoryById(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusNotFound, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusNotFound, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, category)
+}
+
+func (h *Handler) UpdateCategory(c *gin.Context) {
+	var request models.RequestUpdateCategory
+	var id models.RequestGetCategoryById
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	err = c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	err = h.Service.UpdateCategory(id.Id, request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{"message": "category updated successfully"})
+}
+
+func (h *Handler) DeleteCategory(c *gin.Context) {
+	var id models.RequestGetCategoryById
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	err = h.Service.DeleteCategory(id.Id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{"message": "category deleted successfully"})
+}

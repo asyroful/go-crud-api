@@ -5,13 +5,14 @@ import (
 	"go-crud-api/helper"
 	"go-crud-api/models"
 	"go-crud-api/repository"
-	"gorm.io/gorm"
+
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type service struct {
 	Repository repository.Repository
-	Db				 *gorm.DB
+	Db         *gorm.DB
 }
 
 func NewService(repository repository.Repository, db *gorm.DB) Service {
@@ -78,5 +79,44 @@ func (s *service) Login(req models.RequestLogin) (response models.ResponseLogin,
 	response.User = user
 	response.Token = token
 
+	return
+}
+
+func (s *service) CreateCategory(req models.RequestCreateCategory) (category models.Category, err error) {
+	category = models.Category{
+		Name: req.Name,
+	}
+	category, err = s.Repository.CreateCategory(s.Db, category)
+	return
+}
+
+func (s *service) GetCategories(req models.RequestGetCategories) (response models.ResponseCategoryList, err error) {
+	pagination := helper.SetPaginationFromQuery(req.Limit, req.Page)
+	count, categories, err := s.Repository.GetCategories(s.Db, req.Name, pagination)
+	if err != nil {
+		return
+	}
+
+	response = models.ResponseCategoryList{
+		Count:    count,
+		Page:     pagination.Page,
+		Limit:    pagination.Limit,
+		Data: 		categories,
+	}
+	return
+}
+
+func (s *service) GetCategoryById(req models.RequestGetCategoryById) (category models.Category, err error) {
+	category, err = s.Repository.GetCategoryById(s.Db, req.Id)
+	return
+}
+
+func (s *service) UpdateCategory(id int, req models.RequestUpdateCategory) (err error) {
+	err = s.Repository.UpdateCategory(s.Db, id, req.Name)
+	return
+}
+
+func (s *service) DeleteCategory(id int) (err error) {
+	err = s.Repository.DeleteCategory(s.Db, id)
 	return
 }

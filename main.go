@@ -39,8 +39,13 @@ func main() {
 		v1.POST("/users", handler.CreateUser)
 		v1.GET("/users", auth, handler.GetUserById)
 		v1.POST("/login", handler.Login)
+
+		v1.POST("/categories", auth, handler.CreateCategory)
+		v1.GET("/categories", auth, handler.GetCategories)
+		v1.GET("/categories/:id", auth, handler.GetCategoryById)
+		v1.PUT("/categories/:id", auth, handler.UpdateCategory)
+		v1.DELETE("/categories/:id", auth, handler.DeleteCategory)
 	}
 
 	router.Run()
-	return
 }

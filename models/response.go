@@ -1,4 +1,5 @@
 package models
+
 type Response struct {
 	Code    int         `json:"code"`
 	Status  string      `json:"status"`
@@ -12,18 +13,20 @@ type ResponseLogin struct {
 }
 
 type ResponseCategoryList struct {
-	Category []Category `json:"categories"`
+	Data []Category `json:"data"`
 	Count    int64      `json:"count"`
+	Page     int        `json:"page"`
+	Limit    int        `json:"limit"`
 }
 
 type UserResponse struct {
-	Id       int   `json:"id"`
+	Id       int    `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
 }
 
 type LoginResponse struct {
-	Id       int   `json:"id"`
+	Id       int    `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Token    string `json:"token"`

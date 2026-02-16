@@ -1,8 +1,8 @@
 package helper
 
 import (
-	"strconv"
 	"go-crud-api/models"
+	"strconv"
 )
 
 func SetPaginationFromQuery(queryLimit string, queryPage string) models.QueryPagination {
@@ -26,6 +26,7 @@ func SetPaginationFromQuery(queryLimit string, queryPage string) models.QueryPag
 	pagination := models.QueryPagination{
 		Limit:  limit,
 		Offset: offset,
+		Page:   page,
 	}
 
 	return pagination
