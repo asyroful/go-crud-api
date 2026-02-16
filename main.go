@@ -2,48 +2,45 @@ package main
 
 import (
 	"go-crud-api/config"
-	"go-crud-api/controllers"
 	_ "go-crud-api/docs"
+	"go-crud-api/handlers"
+	"go-crud-api/middleware"
 	"go-crud-api/repository"
 	"go-crud-api/services"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @title        Go CRUD API
-// @version      1.0
-// @description  Contoh sederhana CRUD API dengan Go, Gin, dan GORM.
-
-// @host      localhost:8080
-// @BasePath  /
 func main() {
-	godotenv.Load()
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic(err)
+	}
 	config.ConnectDatabase()
 
-	r := gin.Default()
+	router := gin.Default()
+	repo := repository.NewRepository()
+	service := services.NewService(repo, config.DB)
+	handler := handlers.NewHandler(service)
+	mid := middleware.NewAuthMiddleware()
 
-	loanRepository := repository.NewLoanRepository()
-	bookRepository := repository.NewBookRepository()
-	bookService := services.NewBookService(bookRepository, loanRepository)
-	bookController := controllers.NewBookController(bookService)
+	auth := mid.ValidateToken(service)
 
-	// Route Swagger
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = []string{"authorization", "content-type"}
+	router.Use(cors.New(corsConfig))
 
 	// Routes API
-	v1 := r.Group("/api/v1") // Menggunakan grouping agar rapi
+	v1 := router.Group("/api/v1")
 	{
-		// Route Buku
-		v1.GET("/books", bookController.FindBooks)
-		v1.POST("/books", bookController.CreateBook)
-		v1.DELETE("/books/:id", bookController.DeleteBook)
-
-		// Route Peminjaman (Fitur Baru)
-		v1.POST("/books/borrow", bookController.BorrowBook)
+		v1.POST("/users", handler.CreateUser)
+		v1.GET("/users", auth, handler.GetUserById)
+		v1.POST("/login", handler.Login)
 	}
 
-	r.Run()
+	router.Run()
+	return
 }

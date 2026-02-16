@@ -1,13 +1,30 @@
 package models
+type Response struct {
+	Code    int         `json:"code"`
+	Status  string      `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
 
-import "time"
+type ResponseLogin struct {
+	User
+	Token string `json:"token"`
+}
 
-// BookDetailResponse adalah struct untuk menampilkan detail buku beserta status peminjamannya.
-type BookDetailResponse struct {
-	ID           uint       `json:"id"`
-	Title        string     `json:"title"`
-	Author       string     `json:"author"`
-	IsBorrowed   bool       `json:"is_borrowed"`
-	BorrowerName *string    `json:"borrower_name,omitempty"`
-	LoanDate     *time.Time `json:"loan_date,omitempty"`
+type ResponseCategoryList struct {
+	Category []Category `json:"categories"`
+	Count    int64      `json:"count"`
+}
+
+type UserResponse struct {
+	Id       int   `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+}
+
+type LoginResponse struct {
+	Id       int   `json:"id"`
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Token    string `json:"token"`
 }
