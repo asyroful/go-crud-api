@@ -13,4 +13,9 @@ type Service interface {
 	GetCategoryById(req models.RequestGetCategoryById) (category models.Category, err error)
 	UpdateCategory(id int, req models.RequestUpdateCategory) (err error)
 	DeleteCategory(id int) (err error)
+	CreateTransaction(userId int, req models.RequestCreateTransaction) (response models.TransactionResponse, err error)
+	GetTransactions(req models.RequestGetTransactions) (response models.ResponseTransactionList, err error)
+	GetTransactionById(req models.RequestGetTransactionById, userId int) (response models.TransactionResponse, err error)
+	UpdateTransaction(id int, userId int, req models.RequestUpdateTransaction) (response models.TransactionResponse, err error)
+	DeleteTransaction(id int, userId int) (err error)
 }

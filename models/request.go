@@ -32,6 +32,29 @@ type RequestUpdateCategory struct {
 	Name string `json:"name"`
 }
 
+type RequestCreateTransaction struct {
+	Amount     float64 `json:"amount"`
+	Type       string  `json:"type"`
+	CategoryId int     `json:"category_id"`
+}
+
+type RequestGetTransactions struct {
+	UserId     int    `json:"user_id"`
+	CategoryId string `json:"category_id"`
+	Type       string `json:"type"`
+	RequestPagination
+}
+
+type RequestGetTransactionById struct {
+	Id int `json:"id" uri:"id"`
+}
+
+type RequestUpdateTransaction struct {
+	Amount     float64 `json:"amount"`
+	Type       string  `json:"type"`
+	CategoryId string  `json:"category_id"`
+}
+
 type QueryPagination struct {
 	Limit  int `json:"limit"`
 	Offset int `json:"offset"`

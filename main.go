@@ -45,6 +45,12 @@ func main() {
 		v1.GET("/categories/:id", auth, handler.GetCategoryById)
 		v1.PUT("/categories/:id", auth, handler.UpdateCategory)
 		v1.DELETE("/categories/:id", auth, handler.DeleteCategory)
+
+		v1.POST("/transactions", auth, handler.CreateTransaction)
+		v1.GET("/transactions", auth, handler.GetTransactions)
+		v1.GET("/transactions/:id", auth, handler.GetTransactionById)
+		v1.PUT("/transactions/:id", auth, handler.UpdateTransaction)
+		v1.DELETE("/transactions/:id", auth, handler.DeleteTransaction)
 	}
 
 	router.Run()

@@ -42,14 +42,14 @@ func (r *repository) GetCategories(db *gorm.DB, name string, pagination models.Q
 
 	err = query.Count(&count).Error
 	if err != nil {
-			return
+		return
 	}
 
 	err = query.Limit(pagination.Limit).Offset(pagination.Offset).Find(&categories).Error
 	if err != nil {
-			return
+		return
 	}
-	
+
 	return
 }
 
@@ -65,5 +65,58 @@ func (r *repository) DeleteCategory(db *gorm.DB, id int) (err error) {
 
 func (r *repository) UpdateCategory(db *gorm.DB, id int, name string) (err error) {
 	err = db.Model(&models.Category{}).Where("id = ?", id).Update("name", name).Error
+	return
+}
+
+func (r *repository) CreateTransaction(db *gorm.DB, transaction models.Transaction) (models.Transaction, error) {
+	err := db.Create(&transaction).Error
+	if err != nil {
+		return transaction, err
+	}
+	// Load relations
+	err = db.Preload("User").Preload("Category").First(&transaction, transaction.Id).Error
+	return transaction, err
+}
+
+func (r *repository) GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error) {
+	query := db.Model(&models.Transaction{})
+
+	if userId != 0 {
+		query = query.Where("user_id = ?", userId)
+	}
+
+	if categoryId != 0 {
+		query = query.Where("category_id = ?", categoryId)
+	}
+
+	if transactionType != "" {
+		query = query.Where("type = ?", transactionType)
+	}
+
+	err = query.Count(&count).Error
+	if err != nil {
+		return
+	}
+
+	err = query.Preload("User").Preload("Category").Order("created_at DESC").Limit(pagination.Limit).Offset(pagination.Offset).Find(&transactions).Error
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (r *repository) GetTransactionById(db *gorm.DB, id int) (transaction models.Transaction, err error) {
+	err = db.Preload("User").Preload("Category").Where("id = ?", id).First(&transaction).Error
+	return
+}
+
+func (r *repository) UpdateTransaction(db *gorm.DB, id int, transaction models.Transaction) (err error) {
+	err = db.Model(&models.Transaction{}).Where("id = ?", id).Updates(transaction).Error
+	return
+}
+
+func (r *repository) DeleteTransaction(db *gorm.DB, id int) (err error) {
+	err = db.Where("id = ?", id).Delete(&models.Transaction{}).Error
 	return
 }

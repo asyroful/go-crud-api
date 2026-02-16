@@ -15,4 +15,9 @@ type Repository interface {
 	GetCategoryById(db *gorm.DB, id int) (category models.Category, err error)
 	UpdateCategory(db *gorm.DB, id int, name string) (err error)
 	DeleteCategory(db *gorm.DB, id int) (err error)
+	CreateTransaction(db *gorm.DB, transaction models.Transaction) (models.Transaction, error)
+	GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error)
+	GetTransactionById(db *gorm.DB, id int) (transaction models.Transaction, err error)
+	UpdateTransaction(db *gorm.DB, id int, transaction models.Transaction) (err error)
+	DeleteTransaction(db *gorm.DB, id int) (err error)
 }

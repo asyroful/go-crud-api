@@ -226,3 +226,147 @@ func (h *Handler) DeleteCategory(c *gin.Context) {
 
 	helper.ResponseSuccess(c, gin.H{"message": "category deleted successfully"})
 }
+
+func (h *Handler) CreateTransaction(c *gin.Context) {
+	var request models.RequestCreateTransaction
+
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	currentUser := c.MustGet("current_user").(models.User)
+	userId := currentUser.Id
+
+	transaction, err := h.Service.CreateTransaction(userId, request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, transaction)
+}
+
+func (h *Handler) GetTransactions(c *gin.Context) {
+	var request models.RequestGetTransactions
+
+	currentUser := c.MustGet("current_user").(models.User)
+	request.UserId = currentUser.Id
+	request.CategoryId = c.Query("category_id")
+	request.Type = c.Query("type")
+	request.Limit = c.Query("limit")
+	request.Page = c.Query("page")
+
+	transactions, err := h.Service.GetTransactions(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+	helper.ResponseSuccess(c, transactions)
+}
+
+func (h *Handler) GetTransactionById(c *gin.Context) {
+	var request models.RequestGetTransactionById
+
+	err := c.ShouldBindUri(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	// Get userId from JWT token
+	currentUser := c.MustGet("current_user").(models.User)
+	userId := currentUser.Id
+
+	transaction, err := h.Service.GetTransactionById(request, userId)
+	if err != nil {
+		statusCode := http.StatusNotFound
+		if err.Error() == "unauthorized: transaction does not belong to this user" {
+			statusCode = http.StatusForbidden
+		}
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(statusCode, "error", errorMessage)
+		c.AbortWithStatusJSON(statusCode, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, transaction)
+}
+
+func (h *Handler) UpdateTransaction(c *gin.Context) {
+	var request models.RequestUpdateTransaction
+	var id models.RequestGetTransactionById
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	err = c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	// Get userId from JWT token
+	currentUser := c.MustGet("current_user").(models.User)
+	userId := currentUser.Id
+
+	transaction, err := h.Service.UpdateTransaction(id.Id, userId, request)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "unauthorized: transaction does not belong to this user" {
+			statusCode = http.StatusForbidden
+		}
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(statusCode, "error", errorMessage)
+		c.AbortWithStatusJSON(statusCode, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, transaction)
+}
+
+func (h *Handler) DeleteTransaction(c *gin.Context) {
+	var id models.RequestGetTransactionById
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	// Get userId from JWT token
+	currentUser := c.MustGet("current_user").(models.User)
+	userId := currentUser.Id
+
+	err = h.Service.DeleteTransaction(id.Id, userId)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err.Error() == "unauthorized: transaction does not belong to this user" {
+			statusCode = http.StatusForbidden
+		}
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(statusCode, "error", errorMessage)
+		c.AbortWithStatusJSON(statusCode, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{"message": "transaction deleted successfully"})
+}
