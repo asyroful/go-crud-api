@@ -1,127 +1,131 @@
-# Go CRUD API with Gin and GORM
+# Go CRUD API (Gin & GORM)
 
-This is a simple CRUD (Create, Read, Update, Delete) API built with Go, using the Gin framework for routing and GORM for database interaction with a PostgreSQL database.
+API RESTful sederhana yang dibangun menggunakan Go dengan framework Gin. Proyek ini mengimplementasikan operasi CRUD (Create, Read, Update, Delete) dengan arsitektur bersih (Handlers, Services, Repository) dan menggunakan GORM sebagai ORM untuk berinteraksi dengan database PostgreSQL.
 
-## Features
+## Fitur
 
-- **RESTful API:** for managing books and loans.
-- **Gin Framework:** for handling HTTP requests.
-- **GORM:** as an ORM for interacting with the database.
-- **PostgreSQL:** as the database.
-- **Docker:** for containerizing the application and database.
-- **Swagger:** for API documentation.
+-   **Manajemen Pengguna**: Registrasi dan Login.
+-   **Otentikasi JWT**: Endpoint diamankan menggunakan JSON Web Tokens.
+-   **CRUD untuk Kategori**:
+    -   Membuat, Membaca, Memperbarui, dan Menghapus kategori.
+    -   **Paginasi**: Mendukung paginasi (`limit` & `page`) untuk daftar kategori.
+    -   **Pencarian**: Mendukung pencarian berdasarkan nama kategori (`q`).
+-   **Arsitektur Bersih**: Kode diorganisir ke dalam lapisan `handlers`, `services`, dan `repository`.
+-   **Database PostgreSQL**: Menggunakan GORM untuk interaksi database.
+-   **Manajemen Konfigurasi**: Menggunakan file `.env` untuk mengelola variabel lingkungan.
+-   **Containerization**: Siap dijalankan menggunakan Docker dan Docker Compose.
 
-## Prerequisites
-
-- [Go](https://golang.org/dl/) (version 1.25.0 or newer)
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-## Project Structure
+## Struktur Proyek
 
 ```
 .
-├── config
-│   └── db.go
-├── controllers
-│   └── bookControllers.go
-├── docs
-│   ├── docs.go
-│   ├── swagger.json
-│   └── swagger.yaml
-├── handlers
-│   └── error_handler.go
-├── models
-│   ├── book.go
-│   ├── loan.go
-│   └── response.go
-├── repository
-│   ├── book_repository.go
-│   └── loan_repository.go
-├── services
-│   └── book_service.go
-├── .env.example
+├── config/
+│   └── db.go           # Koneksi database
+├── docs/               # File dokumentasi Swagger
+├── handlers/
+│   └── handler.go      # Mengelola request & response HTTP
+├── helper/
+│   ├── auth.go         # Logika pembuatan token JWT
+│   ├── pagination.go   # Logika untuk paginasi
+│   └── response.go     # Formatter response JSON standar
+├── middleware/
+│   └── auth.go         # Middleware untuk validasi token JWT
+├── models/             # Definisi struct (request, response, entitas DB)
+├── repository/
+│   ├── repository.go      # Interface untuk interaksi DB
+│   └── repository_impl.go # Implementasi interaksi DB
+├── services/
+│   ├── service.go         # Interface untuk logika bisnis
+│   └── service_impl.go    # Implementasi logika bisnis
+├── .env                # (Contoh) File variabel lingkungan
+├── .gitignore
 ├── docker-compose.yaml
 ├── Dockerfile
 ├── go.mod
-├── go.sum
-└── main.go
+├── main.go             # Entry point aplikasi dan registrasi rute
+└── postman_collection.json # Koleksi Postman untuk testing API
 ```
 
-## Getting Started
+## Panduan Menjalankan Proyek
 
-### 1. Clone the repository
+### 1. Persyaratan
 
-```bash
-git clone https://github.com/your-username/go-crud-api.git
-cd go-crud-api
-```
+-   [Go](https://golang.org/dl/) (versi 1.25 atau lebih baru)
+-   [Docker](https://www.docker.com/get-started) & [Docker Compose](https://docs.docker.com/compose/install/)
 
-### 2. Create Environment File
+### 2. Konfigurasi Lingkungan
 
-Create a `.env` file in the root of the project by copying the example file:
+1.  Buat file `.env` di direktori utama proyek.
+2.  Salin konten dari contoh di bawah dan sesuaikan dengan konfigurasi Anda.
 
-```bash
-cp .env.example .env
-```
-
-Update the `.env` file with your database configuration:
-
-```
-DB_HOST=localhost
+```env
+# Konfigurasi Database
+DB_HOST=db
 DB_PORT=5432
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=your_db_name
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=go_crud_api
+DB_SSLMODE=disable
+
+# Konfigurasi Aplikasi
 API_PORT=8080
+API_SECRET=your_jwt_secret_key # Ganti dengan secret key yang kuat
 ```
 
-### 3. Install Dependencies
+### 3. Menjalankan dengan Docker (Direkomendasikan)
 
-Install the required Go modules:
+Cara termudah untuk menjalankan proyek ini adalah dengan menggunakan Docker Compose. Perintah ini akan membangun image untuk aplikasi Go dan menjalankan container untuk aplikasi serta database PostgreSQL.
 
 ```bash
-go mod tidy
+docker-compose up --build
 ```
 
-### 4. Run the Database with Docker
+Aplikasi akan berjalan dan dapat diakses di `http://localhost:8080`.
 
-Start the PostgreSQL database using Docker Compose. This will run the database in the background.
+### 4. Menjalankan Secara Lokal (Tanpa Docker)
 
-```bash
-docker-compose up -d
+1.  **Jalankan Database**: Pastikan Anda memiliki instance PostgreSQL yang sedang berjalan dan konfigurasikan file `.env` untuk terhubung ke sana. Anda bisa menjalankan PostgreSQL menggunakan Docker secara terpisah:
+    ```bash
+    docker run --name some-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=go_crud_api -p 5432:5432 -d postgres
+    ```
+
+2.  **Install Dependencies**:
+    ```bash
+    go mod tidy
+    ```
+
+3.  **Jalankan Aplikasi**:
+    ```bash
+    go run main.go
+    ```
+
+## Daftar Endpoint API
+
+Semua endpoint berada di bawah prefix `/api/v1`.
+
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- |
+| `POST`   | `/users`                 | Mendaftarkan pengguna baru.                          | Tidak                  |
+| `POST`   | `/login`                 | Login untuk mendapatkan token JWT.                   | Tidak                  |
+| `GET`    | `/users`                 | Mendapatkan detail pengguna yang sedang login.       | Ya                     |
+| `POST`   | `/categories`            | Membuat kategori baru.                               | Ya                     |
+| `GET`    | `/categories`            | Mendapatkan daftar kategori (mendukung `limit`, `page`, `q`). | Ya                     |
+| `GET`    | `/categories/:id`        | Mendapatkan detail kategori berdasarkan ID.          | Ya                     |
+| `PUT`    | `/categories/:id`        | Memperbarui kategori berdasarkan ID.                 | Ya                     |
+| `DELETE` | `/categories/:id`        | Menghapus kategori berdasarkan ID.                   | Ya                     |
+
+### Contoh Penggunaan Paginasi & Pencarian
+
+```
+GET /api/v1/categories?limit=5&page=2&q=baju
 ```
 
-### 5. Run the Application
+-   `limit=5`: Menampilkan 5 item per halaman.
+-   `page=2`: Menampilkan data dari halaman kedua.
+-   `q=baju`: Mencari kategori yang namanya mengandung kata "baju".
 
-Execute the `main.go` file to start the server:
+## Testing dengan Postman
 
-```bash
-go run main.go
-```
-
-The API will be running at `http://localhost:8080`.
-
-## API Documentation
-
-This project uses Swagger for API documentation. Once the application is running, you can access the Swagger UI at:
-
-[http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
-
-To update the Swagger documentation after making changes to the code annotations, run the following command:
-
-```bash
-swag init
-```
-
-## Main Dependencies
-
-- [github.com/gin-gonic/gin](https://github.com/gin-gonic/gin)
-- [gorm.io/gorm](https://gorm.io/)
-- [gorm.io/driver/postgres](https://github.com/go-gorm/postgres)
-- [github.com/joho/godotenv](https://github.com/joho/godotenv)
-- [github.com/swaggo/gin-swagger](https://github.com/swaggo/gin-swagger)
-- [github.com/swaggo/swag](https://github.com/swaggo/swag)
-
----
-_This README was generated by GitHub Copilot._
+Impor file `postman_collection.json` ke dalam Postman untuk menguji semua endpoint yang tersedia dengan mudah.
+- Variabel `{{base_url}}` secara default adalah `http://localhost:8080`.
+- Token otentikasi akan otomatis disimpan sebagai variabel koleksi setelah berhasil login.
