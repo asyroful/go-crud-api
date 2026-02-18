@@ -4,12 +4,25 @@ API RESTful sederhana yang dibangun menggunakan Go dengan framework Gin. Proyek 
 
 ## Fitur
 
--   **Manajemen Pengguna**: Registrasi dan Login.
+-   **Manajemen Pengguna**: Registrasi dan Login dengan sistem role (Admin/User).
+-   **Role-Based Access Control**: 
+    -   **Admin**: Akses penuh ke manajemen kategori, melihat semua transaksi, dan CRUD user management.
+    -   **User**: Hanya bisa melihat kategori dan CRUD transaksi sendiri.
 -   **Otentikasi JWT**: Endpoint diamankan menggunakan JSON Web Tokens.
 -   **CRUD untuk Kategori**:
-    -   Membuat, Membaca, Memperbarui, dan Menghapus kategori.
+    -   Membuat, Membaca, Memperbarui, dan Menghapus kategori (Admin only).
     -   **Paginasi**: Mendukung paginasi (`limit` & `page`) untuk daftar kategori.
     -   **Pencarian**: Mendukung pencarian berdasarkan nama kategori (`q`).
+-   **CRUD untuk Transaksi**:
+    -   Membuat, Membaca, Memperbarui, dan Menghapus transaksi.
+    -   **Filter Date Range**: Default filter tanggal 27 bulan lalu hingga 26 bulan ini.
+    -   **Filter Tipe**: Filter berdasarkan tipe transaksi (income/expense).
+    -   **Filter Kategori**: Filter berdasarkan kategori.
+    -   Admin dapat melihat transaksi semua user.
+-   **Balance/Saldo**: 
+    -   Menampilkan total income, expense, dan balance berdasarkan range tanggal.
+    -   Default range: 27 bulan lalu - 26 bulan ini.
+-   **Admin User Management**: CRUD pengguna (khusus admin).
 -   **Arsitektur Bersih**: Kode diorganisir ke dalam lapisan `handlers`, `services`, dan `repository`.
 -   **Database PostgreSQL**: Menggunakan GORM untuk interaksi database.
 -   **Manajemen Konfigurasi**: Menggunakan file `.env` untuk mengelola variabel lingkungan.
@@ -31,6 +44,12 @@ API RESTful sederhana yang dibangun menggunakan Go dengan framework Gin. Proyek 
 ├── middleware/
 │   └── auth.go         # Middleware untuk validasi token JWT
 ├── models/             # Definisi struct (request, response, entitas DB)
+│   ├── ballance.go     # Model balance
+│   ├── category.go     # Model kategori
+│   ├── request.go      # Request models (SignUp, Login, Create, Update, etc.)
+│   ├── response.go     # Response models (TransactionList, Balance, etc.)
+│   ├── transaction.go  # Model transaksi
+│   └── user.go         # Model user dengan role
 ├── repository/
 │   ├── repository.go      # Interface untuk interaksi DB
 │   └── repository_impl.go # Implementasi interaksi DB
@@ -69,7 +88,7 @@ DB_SSLMODE=disable
 
 # Konfigurasi Aplikasi
 API_PORT=8080
-API_SECRET=your_jwt_secret_key # Ganti dengan secret key yang kuat
+SECRET_KEY=your_jwt_secret_key_here # Ganti dengan secret key yang kuat untuk JWT
 ```
 
 ### 3. Menjalankan dengan Docker (Direkomendasikan)
@@ -99,30 +118,123 @@ Aplikasi akan berjalan dan dapat diakses di `http://localhost:8080`.
     go run main.go
     ```
 
+## Database Migration
+
+Jika Anda mengupgrade dari versi sebelumnya, jalankan migration berikut untuk menambahkan kolom `role` pada tabel users:
+
+```sql
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user';
+```
+
+GORM akan otomatis membuat tabel jika belum ada saat aplikasi pertama kali dijalankan.
+
 ## Daftar Endpoint API
 
 Semua endpoint berada di bawah prefix `/api/v1`.
 
-| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi |
-| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- |
-| `POST`   | `/users`                 | Mendaftarkan pengguna baru.                          | Tidak                  |
-| `POST`   | `/login`                 | Login untuk mendapatkan token JWT.                   | Tidak                  |
-| `GET`    | `/users`                 | Mendapatkan detail pengguna yang sedang login.       | Ya                     |
-| `POST`   | `/categories`            | Membuat kategori baru.                               | Ya                     |
-| `GET`    | `/categories`            | Mendapatkan daftar kategori (mendukung `limit`, `page`, `q`). | Ya                     |
-| `GET`    | `/categories/:id`        | Mendapatkan detail kategori berdasarkan ID.          | Ya                     |
-| `PUT`    | `/categories/:id`        | Memperbarui kategori berdasarkan ID.                 | Ya                     |
-| `DELETE` | `/categories/:id`        | Menghapus kategori berdasarkan ID.                   | Ya                     |
+### Authentication & Users
 
-### Contoh Penggunaan Paginasi & Pencarian
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi | Role       |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- | :--------- |
+| `POST`   | `/users`                 | Mendaftarkan pengguna baru.                          | Tidak                  | Public     |
+| `POST`   | `/login`                 | Login untuk mendapatkan token JWT.                   | Tidak                  | Public     |
+| `GET`    | `/users`                 | Mendapatkan detail pengguna yang sedang login.       | Ya                     | All Users  |
+
+### Categories
+
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi | Role       |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- | :--------- |
+| `GET`    | `/categories`            | Mendapatkan daftar kategori (mendukung `limit`, `page`, `q`). | Ya           | All Users  |
+| `GET`    | `/categories/:id`        | Mendapatkan detail kategori berdasarkan ID.          | Ya                     | All Users  |
+| `POST`   | `/categories`            | Membuat kategori baru.                               | Ya                     | Admin Only |
+| `PUT`    | `/categories/:id`        | Memperbarui kategori berdasarkan ID.                 | Ya                     | Admin Only |
+| `DELETE` | `/categories/:id`        | Menghapus kategori berdasarkan ID.                   | Ya                     | Admin Only |
+
+### Transactions
+
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi | Role       |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- | :--------- |
+| `POST`   | `/transactions`          | Membuat transaksi baru.                              | Ya                     | All Users  |
+| `GET`    | `/transactions`          | Mendapatkan daftar transaksi (mendukung filter `limit`, `page`, `type`, `category_id`, `start_date`, `end_date`, `user_id`*). | Ya | All Users |
+| `GET`    | `/transactions/:id`      | Mendapatkan detail transaksi berdasarkan ID.         | Ya                     | All Users  |
+| `PUT`    | `/transactions/:id`      | Memperbarui transaksi berdasarkan ID.                | Ya                     | All Users  |
+| `DELETE` | `/transactions/:id`      | Menghapus transaksi berdasarkan ID.                  | Ya                     | All Users  |
+
+**Catatan**: 
+- User biasa hanya bisa melihat dan mengelola transaksi milik sendiri.
+- Admin dapat melihat semua transaksi dari semua user dengan filter `user_id`.
+- Default date range: 27 bulan lalu hingga 26 bulan ini.
+
+### Balance
+
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi | Role       |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- | :--------- |
+| `GET`    | `/balance`               | Mendapatkan balance/saldo (mendukung `start_date`, `end_date`). | Ya        | All Users  |
+
+Response menampilkan `total_income`, `total_expense`, dan `balance` (income - expense).
+
+### Admin - User Management
+
+| Method   | Endpoint                 | Deskripsi                                            | Membutuhkan Otentikasi | Role       |
+| :------- | :----------------------- | :--------------------------------------------------- | :--------------------- | :--------- |
+| `GET`    | `/admin/users`           | Mendapatkan daftar semua user (mendukung `limit`, `page`). | Ya              | Admin Only |
+| `POST`   | `/admin/users`           | Membuat user baru.                                   | Ya                     | Admin Only |
+| `PUT`    | `/admin/users/:id`       | Memperbarui user berdasarkan ID.                     | Ya                     | Admin Only |
+| `DELETE` | `/admin/users/:id`       | Menghapus user berdasarkan ID.                       | Ya                     | Admin Only |
+
+### Contoh Penggunaan Filter Transaksi
 
 ```
-GET /api/v1/categories?limit=5&page=2&q=baju
+GET /api/v1/transactions?limit=10&page=1&type=expense&category_id=1&start_date=2026-01-01&end_date=2026-01-31
 ```
 
--   `limit=5`: Menampilkan 5 item per halaman.
--   `page=2`: Menampilkan data dari halaman kedua.
--   `q=baju`: Mencari kategori yang namanya mengandung kata "baju".
+-   `limit=10`: Menampilkan 10 item per halaman.
+-   `page=1`: Menampilkan data dari halaman pertama.
+-   `type=expense`: Filter transaksi tipe expense (atau `income`).
+-   `category_id=1`: Filter berdasarkan kategori dengan ID 1.
+-   `start_date=2026-01-01`: Tanggal mulai filter.
+-   `end_date=2026-01-31`: Tanggal akhir filter.
+-   `user_id=2` (Admin only): Filter transaksi berdasarkan user tertentu.
+
+## Role & Permissions
+
+Sistem ini menggunakan 2 role:
+
+### 👤 User (Default)
+- ✅ View categories (read-only)
+- ✅ CRUD transaksi sendiri
+- ✅ View balance sendiri
+
+### 👨‍💼 Admin
+- ✅ CRUD categories (create, update, delete)
+- ✅ View semua transaksi dari semua user
+- ✅ CRUD user management
+
+### Membuat Admin User
+
+**Saat registrasi**, tambahkan field `role: "admin"`:
+```json
+POST /api/v1/users
+{
+  "name": "Admin User",
+  "username": "admin",
+  "password": "password123",
+  "role": "admin"
+}
+```
+
+**Atau melalui admin panel** (jika sudah ada admin):
+```json
+POST /api/v1/admin/users
+{
+  "name": "New Admin",
+  "username": "newadmin",
+  "password": "password123",
+  "role": "admin"
+}
+```
+
+Default role jika tidak diisi adalah `"user"`.
 
 ## Testing dengan Postman
 
