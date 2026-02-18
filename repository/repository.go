@@ -16,8 +16,9 @@ type Repository interface {
 	UpdateCategory(db *gorm.DB, id int, name string) (err error)
 	DeleteCategory(db *gorm.DB, id int) (err error)
 	CreateTransaction(db *gorm.DB, transaction models.Transaction) (models.Transaction, error)
-	GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error)
+	GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, startDate string, endDate string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error)
 	GetTransactionById(db *gorm.DB, id int) (transaction models.Transaction, err error)
 	UpdateTransaction(db *gorm.DB, id int, transaction models.Transaction) (err error)
 	DeleteTransaction(db *gorm.DB, id int) (err error)
+	GetBalanceByDateRange(db *gorm.DB, userId int, startDate string, endDate string) (totalIncome float64, totalExpense float64, err error)
 }

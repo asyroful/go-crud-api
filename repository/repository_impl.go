@@ -78,7 +78,7 @@ func (r *repository) CreateTransaction(db *gorm.DB, transaction models.Transacti
 	return transaction, err
 }
 
-func (r *repository) GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error) {
+func (r *repository) GetTransactions(db *gorm.DB, userId int, categoryId int, transactionType string, startDate string, endDate string, pagination models.QueryPagination) (count int64, transactions []models.Transaction, err error) {
 	query := db.Model(&models.Transaction{})
 
 	if userId != 0 {
@@ -91,6 +91,15 @@ func (r *repository) GetTransactions(db *gorm.DB, userId int, categoryId int, tr
 
 	if transactionType != "" {
 		query = query.Where("type = ?", transactionType)
+	}
+
+	// Add date range filter
+	if startDate != "" {
+		query = query.Where("DATE(created_at) >= ?", startDate)
+	}
+
+	if endDate != "" {
+		query = query.Where("DATE(created_at) <= ?", endDate)
 	}
 
 	err = query.Count(&count).Error
@@ -118,5 +127,45 @@ func (r *repository) UpdateTransaction(db *gorm.DB, id int, transaction models.T
 
 func (r *repository) DeleteTransaction(db *gorm.DB, id int) (err error) {
 	err = db.Where("id = ?", id).Delete(&models.Transaction{}).Error
+	return
+}
+
+func (r *repository) GetBalanceByDateRange(db *gorm.DB, userId int, startDate string, endDate string) (totalIncome float64, totalExpense float64, err error) {
+	// Calculate total income
+	incomeQuery := db.Model(&models.Transaction{}).Where("user_id = ?", userId).Where("type = ?", "income")
+	if startDate != "" {
+		incomeQuery = incomeQuery.Where("DATE(created_at) >= ?", startDate)
+	}
+	if endDate != "" {
+		incomeQuery = incomeQuery.Where("DATE(created_at) <= ?", endDate)
+	}
+
+	var incomeResult struct {
+		Total float64
+	}
+	err = incomeQuery.Select("COALESCE(SUM(amount), 0) as total").Scan(&incomeResult).Error
+	if err != nil {
+		return
+	}
+	totalIncome = incomeResult.Total
+
+	// Calculate total expense
+	expenseQuery := db.Model(&models.Transaction{}).Where("user_id = ?", userId).Where("type = ?", "expense")
+	if startDate != "" {
+		expenseQuery = expenseQuery.Where("DATE(created_at) >= ?", startDate)
+	}
+	if endDate != "" {
+		expenseQuery = expenseQuery.Where("DATE(created_at) <= ?", endDate)
+	}
+
+	var expenseResult struct {
+		Total float64
+	}
+	err = expenseQuery.Select("COALESCE(SUM(amount), 0) as total").Scan(&expenseResult).Error
+	if err != nil {
+		return
+	}
+	totalExpense = expenseResult.Total
+
 	return
 }

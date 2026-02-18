@@ -58,3 +58,12 @@ type LoginResponse struct {
 	Username string `json:"username"`
 	Token    string `json:"token"`
 }
+
+type ResponseBalance struct {
+	UserId       int     `json:"user_id"`
+	TotalIncome  float64 `json:"total_income"`
+	TotalExpense float64 `json:"total_expense"`
+	Balance      float64 `json:"balance"`
+	StartDate    string  `json:"start_date"`
+	EndDate      string  `json:"end_date"`
+}

@@ -42,6 +42,8 @@ type RequestGetTransactions struct {
 	UserId     int    `json:"user_id"`
 	CategoryId string `json:"category_id"`
 	Type       string `json:"type"`
+	StartDate  string `json:"start_date"`
+	EndDate    string `json:"end_date"`
 	RequestPagination
 }
 
@@ -64,4 +66,10 @@ type QueryPagination struct {
 type RequestPagination struct {
 	Limit string `json:"limit"`
 	Page  string `json:"page"`
+}
+
+type RequestGetBalance struct {
+	UserId    int    `json:"user_id"`
+	StartDate string `json:"start_date"`
+	EndDate   string `json:"end_date"`
 }

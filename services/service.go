@@ -18,4 +18,5 @@ type Service interface {
 	GetTransactionById(req models.RequestGetTransactionById, userId int) (response models.TransactionResponse, err error)
 	UpdateTransaction(id int, userId int, req models.RequestUpdateTransaction) (response models.TransactionResponse, err error)
 	DeleteTransaction(id int, userId int) (err error)
+	GetBalance(req models.RequestGetBalance) (response models.ResponseBalance, err error)
 }

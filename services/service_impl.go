@@ -6,6 +6,7 @@ import (
 	"go-crud-api/models"
 	"go-crud-api/repository"
 	"strconv"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -270,7 +271,29 @@ func (s *service) GetTransactions(req models.RequestGetTransactions) (response m
 			return
 		}
 	}
-	count, transactions, err := s.Repository.GetTransactions(s.Db, req.UserId, categoryId, req.Type, pagination)
+
+	// Set default date range if not provided (27th of previous month to 26th of current month)
+	startDate := req.StartDate
+	endDate := req.EndDate
+	if startDate == "" || endDate == "" {
+		now := time.Now()
+		// Calculate start date: 27th of previous month
+		if now.Day() >= 27 {
+			startDate = time.Date(now.Year(), now.Month(), 27, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		} else {
+			prevMonth := now.AddDate(0, -1, 0)
+			startDate = time.Date(prevMonth.Year(), prevMonth.Month(), 27, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		}
+		// Calculate end date: 26th of current month
+		if now.Day() >= 27 {
+			nextMonth := now.AddDate(0, 1, 0)
+			endDate = time.Date(nextMonth.Year(), nextMonth.Month(), 26, 23, 59, 59, 0, now.Location()).Format("2006-01-02")
+		} else {
+			endDate = time.Date(now.Year(), now.Month(), 26, 23, 59, 59, 0, now.Location()).Format("2006-01-02")
+		}
+	}
+
+	count, transactions, err := s.Repository.GetTransactions(s.Db, req.UserId, categoryId, req.Type, startDate, endDate, pagination)
 	if err != nil {
 		return
 	}
@@ -445,5 +468,44 @@ func (s *service) DeleteTransaction(id int, userId int) (err error) {
 	}
 
 	err = s.Repository.DeleteTransaction(s.Db, id)
+	return
+}
+
+func (s *service) GetBalance(req models.RequestGetBalance) (response models.ResponseBalance, err error) {
+	// Set default date range if not provided (27th of previous month to 26th of current month)
+	startDate := req.StartDate
+	endDate := req.EndDate
+	if startDate == "" || endDate == "" {
+		now := time.Now()
+		// Calculate start date: 27th of previous month
+		if now.Day() >= 27 {
+			startDate = time.Date(now.Year(), now.Month(), 27, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		} else {
+			prevMonth := now.AddDate(0, -1, 0)
+			startDate = time.Date(prevMonth.Year(), prevMonth.Month(), 27, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		}
+		// Calculate end date: 26th of current month
+		if now.Day() >= 27 {
+			nextMonth := now.AddDate(0, 1, 0)
+			endDate = time.Date(nextMonth.Year(), nextMonth.Month(), 26, 23, 59, 59, 0, now.Location()).Format("2006-01-02")
+		} else {
+			endDate = time.Date(now.Year(), now.Month(), 26, 23, 59, 59, 0, now.Location()).Format("2006-01-02")
+		}
+	}
+
+	totalIncome, totalExpense, err := s.Repository.GetBalanceByDateRange(s.Db, req.UserId, startDate, endDate)
+	if err != nil {
+		return
+	}
+
+	response = models.ResponseBalance{
+		UserId:       req.UserId,
+		TotalIncome:  totalIncome,
+		TotalExpense: totalExpense,
+		Balance:      totalIncome - totalExpense,
+		StartDate:    startDate,
+		EndDate:      endDate,
+	}
+
 	return
 }

@@ -259,6 +259,8 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	request.UserId = currentUser.Id
 	request.CategoryId = c.Query("category_id")
 	request.Type = c.Query("type")
+	request.StartDate = c.Query("start_date")
+	request.EndDate = c.Query("end_date")
 	request.Limit = c.Query("limit")
 	request.Page = c.Query("page")
 
@@ -369,4 +371,23 @@ func (h *Handler) DeleteTransaction(c *gin.Context) {
 	}
 
 	helper.ResponseSuccess(c, gin.H{"message": "transaction deleted successfully"})
+}
+
+func (h *Handler) GetBalance(c *gin.Context) {
+	var request models.RequestGetBalance
+
+	currentUser := c.MustGet("current_user").(models.User)
+	request.UserId = currentUser.Id
+	request.StartDate = c.Query("start_date")
+	request.EndDate = c.Query("end_date")
+
+	balance, err := h.Service.GetBalance(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, balance)
 }

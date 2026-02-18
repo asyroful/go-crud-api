@@ -51,6 +51,8 @@ func main() {
 		v1.GET("/transactions/:id", auth, handler.GetTransactionById)
 		v1.PUT("/transactions/:id", auth, handler.UpdateTransaction)
 		v1.DELETE("/transactions/:id", auth, handler.DeleteTransaction)
+
+		v1.GET("/balance", auth, handler.GetBalance)
 	}
 
 	router.Run()
