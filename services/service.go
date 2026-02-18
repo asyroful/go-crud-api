@@ -19,4 +19,9 @@ type Service interface {
 	UpdateTransaction(id int, userId int, req models.RequestUpdateTransaction) (response models.TransactionResponse, err error)
 	DeleteTransaction(id int, userId int) (err error)
 	GetBalance(req models.RequestGetBalance) (response models.ResponseBalance, err error)
+	// Admin user management
+	GetAllUsers(req models.RequestGetAllUsers) (response models.ResponseUserList, err error)
+	AdminCreateUser(req models.RequestCreateUser) (user models.User, err error)
+	AdminUpdateUser(id int, req models.RequestUpdateUser) (user models.User, err error)
+	AdminDeleteUser(id int) (err error)
 }

@@ -169,3 +169,29 @@ func (r *repository) GetBalanceByDateRange(db *gorm.DB, userId int, startDate st
 
 	return
 }
+
+func (r *repository) GetAllUsers(db *gorm.DB, pagination models.QueryPagination) (count int64, users []models.User, err error) {
+	query := db.Model(&models.User{})
+
+	err = query.Count(&count).Error
+	if err != nil {
+		return
+	}
+
+	err = query.Select("id", "name", "username", "role", "created_at", "updated_at").Order("created_at DESC").Limit(pagination.Limit).Offset(pagination.Offset).Find(&users).Error
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (r *repository) UpdateUser(db *gorm.DB, id int, user models.User) (err error) {
+	err = db.Model(&models.User{}).Where("id = ?", id).Updates(user).Error
+	return
+}
+
+func (r *repository) DeleteUser(db *gorm.DB, id int) (err error) {
+	err = db.Where("id = ?", id).Delete(&models.User{}).Error
+	return
+}

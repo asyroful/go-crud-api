@@ -5,6 +5,7 @@ import (
 	"go-crud-api/models"
 	"go-crud-api/services"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -256,7 +257,25 @@ func (h *Handler) GetTransactions(c *gin.Context) {
 	var request models.RequestGetTransactions
 
 	currentUser := c.MustGet("current_user").(models.User)
-	request.UserId = currentUser.Id
+
+	// If admin, allow querying all users' transactions
+	// If regular user, only show their own transactions
+	if currentUser.Role == "admin" {
+		// Admin can optionally filter by user_id via query param
+		userIdQuery := c.Query("user_id")
+		if userIdQuery != "" {
+			// Parse and set user_id if provided
+			userId, err := strconv.Atoi(userIdQuery)
+			if err == nil {
+				request.UserId = userId
+			}
+		}
+		// If no user_id provided, UserId will be 0 and repository will return all transactions
+	} else {
+		// Regular user can only see their own transactions
+		request.UserId = currentUser.Id
+	}
+
 	request.CategoryId = c.Query("category_id")
 	request.Type = c.Query("type")
 	request.StartDate = c.Query("start_date")
@@ -390,4 +409,106 @@ func (h *Handler) GetBalance(c *gin.Context) {
 	}
 
 	helper.ResponseSuccess(c, balance)
+}
+
+// Admin user management handlers
+func (h *Handler) GetAllUsers(c *gin.Context) {
+	var request models.RequestGetAllUsers
+	request.Limit = c.Query("limit")
+	request.Page = c.Query("page")
+
+	users, err := h.Service.GetAllUsers(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusInternalServerError, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, users)
+}
+
+func (h *Handler) AdminCreateUser(c *gin.Context) {
+	var request models.RequestCreateUser
+
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	user, err := h.Service.AdminCreateUser(request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusBadRequest, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{
+		"id":       user.Id,
+		"name":     user.Name,
+		"username": user.Username,
+		"role":     user.Role,
+	})
+}
+
+func (h *Handler) AdminUpdateUser(c *gin.Context) {
+	var id models.RequestDeleteUser
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	var request models.RequestUpdateUser
+	err = c.ShouldBindJSON(&request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	user, err := h.Service.AdminUpdateUser(id.Id, request)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusBadRequest, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{
+		"id":       user.Id,
+		"name":     user.Name,
+		"username": user.Username,
+		"role":     user.Role,
+	})
+}
+
+func (h *Handler) AdminDeleteUser(c *gin.Context) {
+	var id models.RequestDeleteUser
+
+	err := c.ShouldBindUri(&id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusUnprocessableEntity, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	err = h.Service.AdminDeleteUser(id.Id)
+	if err != nil {
+		errorMessage := gin.H{"errors": err.Error()}
+		response := helper.ResponseFormater(http.StatusBadRequest, "error", errorMessage)
+		c.AbortWithStatusJSON(http.StatusBadRequest, response)
+		return
+	}
+
+	helper.ResponseSuccess(c, gin.H{"message": "user deleted successfully"})
 }

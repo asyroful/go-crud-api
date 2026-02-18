@@ -60,7 +60,35 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Test User\",\n    \"username\": \"testuser\",\n    \"password\": \"password123\"\n}",
+							"raw": "{\n    \"name\": \"Test User\",\n    \"username\": \"testuser\",\n    \"password\": \"password123\",\n    \"role\": \"user\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin User\",\n    \"username\": \"admin\",\n    \"password\": \"admin123\",\n    \"role\": \"admin\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -354,7 +382,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/transactions?limit=5&page=1&type=expense&category_id=1",
+							"raw": "{{base_url}}/api/v1/transactions?limit=5&page=1&type=expense&category_id=1&start_date=2026-01-27&end_date=2026-02-26",
 							"host": [
 								"{{base_url}}"
 							],
@@ -381,6 +409,24 @@
 									"key": "category_id",
 									"value": "1",
 									"description": "Filter by category ID (optional)"
+								},
+								{
+									"key": "start_date",
+									"value": "2026-01-27",
+									"description": "Start date (YYYY-MM-DD) - defaults to 27th of previous month",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2026-02-26",
+									"description": "End date (YYYY-MM-DD) - defaults to 26th of current month",
+									"disabled": true
+								},
+								{
+									"key": "user_id",
+									"value": "1",
+									"description": "Admin only: Filter by user ID",
+									"disabled": true
 								}
 							]
 						}
@@ -507,7 +553,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/balance",
+							"raw": "{{base_url}}/api/v1/balance?start_date=2026-01-27&end_date=2026-02-26",
 							"host": [
 								"{{base_url}}"
 							],
@@ -515,6 +561,175 @@
 								"api",
 								"v1",
 								"balance"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2026-01-27",
+									"description": "Start date (YYYY-MM-DD) - defaults to 27th of previous month",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "2026-02-26",
+									"description": "End date (YYYY-MM-DD) - defaults to 26th of current month",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin - User Management",
+			"item": [
+				{
+					"name": "Get All Users (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users?limit=10&page=1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New User\",\n    \"username\": \"newuser\",\n    \"password\": \"password123\",\n    \"role\": \"user\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated User Name\",\n    \"username\": \"updateduser\",\n    \"password\": \"newpassword123\",\n    \"role\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/admin/users/2",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"users",
+								"2"
 							]
 						}
 					},

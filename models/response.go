@@ -50,6 +50,7 @@ type UserResponse struct {
 	Id       int    `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
+	Role     string `json:"role"`
 }
 
 type LoginResponse struct {
@@ -66,4 +67,11 @@ type ResponseBalance struct {
 	Balance      float64 `json:"balance"`
 	StartDate    string  `json:"start_date"`
 	EndDate      string  `json:"end_date"`
+}
+
+type ResponseUserList struct {
+	Data  []UserResponse `json:"data"`
+	Count int64          `json:"count"`
+	Page  int            `json:"page"`
+	Limit int            `json:"limit"`
 }

@@ -27,6 +27,7 @@ func main() {
 	mid := middleware.NewAuthMiddleware()
 
 	auth := mid.ValidateToken(service)
+	adminOnly := mid.RequireRole("admin")
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
@@ -40,12 +41,14 @@ func main() {
 		v1.GET("/users", auth, handler.GetUserById)
 		v1.POST("/login", handler.Login)
 
-		v1.POST("/categories", auth, handler.CreateCategory)
+		// Category routes - admin can CRUD, users can only read
 		v1.GET("/categories", auth, handler.GetCategories)
 		v1.GET("/categories/:id", auth, handler.GetCategoryById)
-		v1.PUT("/categories/:id", auth, handler.UpdateCategory)
-		v1.DELETE("/categories/:id", auth, handler.DeleteCategory)
+		v1.POST("/categories", auth, adminOnly, handler.CreateCategory)
+		v1.PUT("/categories/:id", auth, adminOnly, handler.UpdateCategory)
+		v1.DELETE("/categories/:id", auth, adminOnly, handler.DeleteCategory)
 
+		// Transaction routes - users can CRUD their own, admin can see all
 		v1.POST("/transactions", auth, handler.CreateTransaction)
 		v1.GET("/transactions", auth, handler.GetTransactions)
 		v1.GET("/transactions/:id", auth, handler.GetTransactionById)
@@ -53,6 +56,12 @@ func main() {
 		v1.DELETE("/transactions/:id", auth, handler.DeleteTransaction)
 
 		v1.GET("/balance", auth, handler.GetBalance)
+
+		// Admin user management routes
+		v1.GET("/admin/users", auth, adminOnly, handler.GetAllUsers)
+		v1.POST("/admin/users", auth, adminOnly, handler.AdminCreateUser)
+		v1.PUT("/admin/users/:id", auth, adminOnly, handler.AdminUpdateUser)
+		v1.DELETE("/admin/users/:id", auth, adminOnly, handler.AdminDeleteUser)
 	}
 
 	router.Run()

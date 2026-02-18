@@ -8,6 +8,7 @@ type RequestSignUp struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Role     string `json:"role"` // "admin" or "user", default "user"
 }
 
 type RequestLogin struct {
@@ -72,4 +73,26 @@ type RequestGetBalance struct {
 	UserId    int    `json:"user_id"`
 	StartDate string `json:"start_date"`
 	EndDate   string `json:"end_date"`
+}
+
+type RequestCreateUser struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+}
+
+type RequestUpdateUser struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+}
+
+type RequestDeleteUser struct {
+	Id int `json:"id" uri:"id"`
+}
+
+type RequestGetAllUsers struct {
+	RequestPagination
 }

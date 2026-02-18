@@ -48,10 +48,17 @@ func (s *service) CreateUser(req models.RequestSignUp) (user models.User, err er
 		return
 	}
 
+	// Set default role to "user" if not provided
+	role := req.Role
+	if role == "" {
+		role = "user"
+	}
+
 	user = models.User{
 		Name:     req.Name,
 		Username: req.Username,
 		Password: string(passwordHash),
+		Role:     role,
 	}
 
 	err = s.Repository.CreateUser(s.Db, user)
@@ -86,7 +93,7 @@ func (s *service) Login(req models.RequestLogin) (response models.ResponseLogin,
 
 func (s *service) CreateCategory(req models.RequestCreateCategory) (category models.Category, err error) {
 	// Validasi: Name tidak boleh kosong atau hanya spasi
-	if len(req.Name) < 1 || len(req.Name) != len(req.Name) || req.Name == "" {
+	if len(req.Name) < 1 || req.Name == "" {
 		err = errors.New("category name is required and cannot be empty")
 		return
 	}
@@ -507,5 +514,144 @@ func (s *service) GetBalance(req models.RequestGetBalance) (response models.Resp
 		EndDate:      endDate,
 	}
 
+	return
+}
+
+// Admin user management methods
+func (s *service) GetAllUsers(req models.RequestGetAllUsers) (response models.ResponseUserList, err error) {
+	pagination := helper.SetPaginationFromQuery(req.Limit, req.Page)
+
+	count, users, err := s.Repository.GetAllUsers(s.Db, pagination)
+	if err != nil {
+		return
+	}
+
+	userResponses := []models.UserResponse{}
+	for _, user := range users {
+		userResponses = append(userResponses, models.UserResponse{
+			Id:       user.Id,
+			Name:     user.Name,
+			Username: user.Username,
+			Role:     user.Role,
+		})
+	}
+
+	response = models.ResponseUserList{
+		Count: count,
+		Page:  pagination.Page,
+		Limit: pagination.Limit,
+		Data:  userResponses,
+	}
+
+	return
+}
+
+func (s *service) AdminCreateUser(req models.RequestCreateUser) (user models.User, err error) {
+	if len(req.Name) < 1 || len(req.Username) < 1 || len(req.Password) < 1 {
+		err = errors.New("invalid data requested")
+		return
+	}
+
+	existingUser, err := s.Repository.FindUserByUsername(s.Db, req.Username)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return
+	}
+
+	if existingUser.Id != 0 {
+		err = errors.New("username already used")
+		return
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.MinCost)
+	if err != nil {
+		return
+	}
+
+	// Set default role to "user" if not provided
+	role := req.Role
+	if role == "" {
+		role = "user"
+	}
+
+	user = models.User{
+		Name:     req.Name,
+		Username: req.Username,
+		Password: string(passwordHash),
+		Role:     role,
+	}
+
+	err = s.Repository.CreateUser(s.Db, user)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (s *service) AdminUpdateUser(id int, req models.RequestUpdateUser) (user models.User, err error) {
+	// Check if user exists
+	user, err = s.Repository.FindUserById(s.Db, id)
+	if err != nil {
+		return
+	}
+
+	if user.Id == 0 {
+		err = errors.New("user not found")
+		return
+	}
+
+	// Prepare update data
+	updateData := models.User{}
+
+	if req.Name != "" {
+		updateData.Name = req.Name
+	}
+
+	if req.Username != "" {
+		// Check if username is already taken by another user
+		existingUser, _ := s.Repository.FindUserByUsername(s.Db, req.Username)
+		if existingUser.Id != 0 && existingUser.Id != id {
+			err = errors.New("username already used")
+			return
+		}
+		updateData.Username = req.Username
+	}
+
+	if req.Password != "" {
+		passwordHash, errHash := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.MinCost)
+		if errHash != nil {
+			err = errHash
+			return
+		}
+		updateData.Password = string(passwordHash)
+	}
+
+	if req.Role != "" {
+		updateData.Role = req.Role
+	}
+
+	err = s.Repository.UpdateUser(s.Db, id, updateData)
+	if err != nil {
+		return
+	}
+
+	// Get updated user
+	user, err = s.Repository.FindUserById(s.Db, id)
+	return
+}
+
+func (s *service) AdminDeleteUser(id int) (err error) {
+	// Check if user exists
+	user, err := s.Repository.FindUserById(s.Db, id)
+	if err != nil {
+		return
+	}
+
+	if user.Id == 0 {
+		err = errors.New("user not found")
+		return
+	}
+
+	err = s.Repository.DeleteUser(s.Db, id)
 	return
 }

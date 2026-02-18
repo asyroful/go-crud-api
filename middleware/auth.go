@@ -3,20 +3,22 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
+	"go-crud-api/helper"
+	"go-crud-api/models"
+	"go-crud-api/services"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"go-crud-api/helper"
-	"go-crud-api/models"
-	"go-crud-api/services"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
 type AuthMiddleware interface {
 	ValidateToken(service services.Service) gin.HandlerFunc
+	RequireRole(roles ...string) gin.HandlerFunc
 }
 
 type authMiddleware struct {
@@ -98,6 +100,38 @@ func (a authMiddleware) ValidateToken(service services.Service) gin.HandlerFunc 
 		}
 
 		c.Set("current_user", user)
+	}
+}
+
+func (a authMiddleware) RequireRole(roles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		currentUser, exists := c.Get("current_user")
+		if !exists {
+			errorMessage := gin.H{"errors": "unauthorized: user not found"}
+			response := helper.ResponseFormater(http.StatusUnauthorized, "error", errorMessage)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		user := currentUser.(models.User)
+
+		// Check if user's role matches any of the required roles
+		hasRole := false
+		for _, role := range roles {
+			if user.Role == role {
+				hasRole = true
+				break
+			}
+		}
+
+		if !hasRole {
+			errorMessage := gin.H{"errors": "forbidden: insufficient permissions"}
+			response := helper.ResponseFormater(http.StatusForbidden, "error", errorMessage)
+			c.AbortWithStatusJSON(http.StatusForbidden, response)
+			return
+		}
+
+		c.Next()
 	}
 }
 
